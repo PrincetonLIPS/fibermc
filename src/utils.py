@@ -47,3 +47,22 @@ def divide00(numerator: np.ndarray, denominator: np.ndarray, dtype: type=np.floa
     force_zero: np.ndarray = np.logical_and(numerator == 0, denominator == 0)
     quotient: np.ndarray = np.where(force_zero, dtype(0.0), numerator) / np.where(force_zero, dtype(1.0), denominator)
     return quotient 
+
+def zero_one_sign(arr: np.ndarray) -> np.ndarray:
+    """Returns an array of the same shape as the input with 
+    the value 1. where the input array is greater than or equal 
+    to zero and 0. where the input array is less than zero. 
+
+    Parameters
+    ----------
+    arr : np.ndarray 
+        input array 
+
+    Returns 
+    -------
+    binary_arr : np.ndarray 
+        result with shape of `arr` and value 1. where arr >= 0. 
+        and value 0. otherwise. 
+    """
+    binary_arr: np.ndarray = 0.5 * (1.0 + np.sign(arr))
+    return binary_arr

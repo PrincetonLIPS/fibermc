@@ -99,7 +99,6 @@ def main():
     key: np.ndarray = npr.PRNGKey(0)
     num_fibers: int = 500
     fiber_length: float = 5e-2
-    fibers: np.ndarray = estimators.sample(key, domain_bounds, num_fibers, fiber_length)
 
     num_steps: int = 750 
     report_every: int = 25

@@ -26,3 +26,8 @@ We currently support only rectilinear domains, although it would be relatively s
    fiber_length: float = 1e-02 
 
    fibers: np.ndarray = estimators.sample(key, bounds, num_fibers, fiber_length)
+
+.. image:: images/smc_pi.png 
+   :width: 500 
+   :align: center
+   :alt: Sampled fibers to estimate pi. 

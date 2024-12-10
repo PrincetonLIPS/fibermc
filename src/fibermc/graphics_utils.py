@@ -1,12 +1,10 @@
 import functools
 from typing import List, Tuple
 
-from jax import jit, vmap
+from jax import jit
 import jax.numpy as np
-import jax.random as npr
 import numpy as static_np
 
-from fibermc.estimators import sample_fibers
 from fibermc.constants import FLOAT_TYPE
 
 
@@ -127,57 +125,6 @@ def get_bounds_from_hull(pixel_hull: np.ndarray) -> np.ndarray:
             pixel_hull[:, 1].max(),
         ]
     )
-
-
-def sample_perfect(fibers_per_pixel: int, pixel_hulls: np.ndarray) -> np.ndarray:
-    num_pixels: int = pixel_hulls.shape[0]
-    bounds: np.ndarray = vmap(get_bounds_from_hull)(pixel_hulls)
-
-    key: np.ndarray = npr.PRNGKey(0)
-    keys: np.ndarray = npr.split(key, num_pixels)
-    fibers, _ = vmap(sample_fibers, in_axes=(0, 0, None, None))(
-        keys, bounds, fibers_per_pixel, 0.5
-    )
-    return np.squeeze(fibers)
-
-
-def setup_tiles(args, target_resolution: np.ndarray) -> tuple:
-    """Configure an np.ndarray of fibers (to be shared among each tile by
-    translation downstream) and an np.ndarray of tile identifiers given
-    some configuration data and a target rendering resolution.
-
-    Parameters
-    ----------
-    args : namespace
-        TODO replace with config dataclass
-    target_resolution : np.ndarray
-        resolution of the rendering target.
-
-    Returns
-    -------
-    tile_data (fibers, tile_ids) : Tuple[np.ndarray, np.ndarray]
-        Tuple comprised of an array of fibers and an array of tile identifiers.
-    """
-    # --- determine (spatial) boundary of each tile
-    tile_bounds: tuple = (args.tile_dimension, args.tile_dimension)
-
-    # --- compute tile identifiers
-    tile_ids: np.ndarray = static_np.array(
-        compute_tile_ids(target_resolution, args.tile_dimension)
-    )
-    num_tiles: int = tile_ids.shape[0]
-    args.log.info(
-        f"using {num_tiles} tiles of dimension: ({args.tile_dimension}, {args.tile_dimension})"
-    )
-
-    # --- sample fibers in 0th tile to be shared (via translation) among the other tiles
-    fibers: np.ndarray = np.array(
-        sample_fibers(npr.PRNGKey(0), args.num_fibers, args.fiber_length, tile_bounds)
-    )
-    args.log.info(
-        f"sampled {args.num_fibers} fibers ({human_bytes_str(fibers.nbytes)})"
-    )
-    return fibers, tile_ids
 
 
 def compute_background_area(image: np.ndarray, mask: np.ndarray) -> float:

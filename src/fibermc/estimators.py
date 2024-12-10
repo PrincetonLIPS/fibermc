@@ -1,17 +1,18 @@
-"""Implementations of utilities for sampling fibers and various FMC estimators. 
-"""
+"""Implementations of utilities for sampling fibers and various FMC estimators."""
+
 import functools
 
-import jax 
+import jax
 import jax.numpy as np
 import jax.random as npr
 
-import implicit_differentiation
-import utils
-import geometry_utils
+import fibermc.implicit_differentiation as implicit_differentiation
+import fibermc.utils as utils
+import fibermc.geometry_utils as geometry_utils
 
 FP64: type = np.float64
-pytree: type = dict 
+pytree: type = dict
+
 
 def sample(
     key: np.ndarray,
@@ -41,7 +42,7 @@ def sample(
     -------
     fibers: np.ndarray
         An ndarray of shape (num_fibers, 2, 2) containing the fibers
-        along axis 0. For each fiber, the start point is the first row 
+        along axis 0. For each fiber, the start point is the first row
         of the (2, 2) array and the end point is the second row.
     """
     location_key, angular_key = npr.split(key, 2)
@@ -73,16 +74,18 @@ def sample(
         minval=-np.pi,
         maxval=np.pi,
     )
-    ends: np.ndarray = starts + (fiber_length * np.array([np.cos(angles), np.sin(angles)]).T)
+    ends: np.ndarray = starts + (
+        fiber_length * np.array([np.cos(angles), np.sin(angles)]).T
+    )
     fibers: np.ndarray = np.stack((starts, ends), axis=-2)
     return fibers
 
 
 def estimate_field_length(
-    field: callable, 
-    fibers: np.ndarray, 
-    params: tuple, 
-    negative: bool = True, 
+    field: callable,
+    fibers: np.ndarray,
+    params: tuple,
+    negative: bool = True,
 ) -> np.ndarray:
     """Estimates the total fiber length for which a given scalar `field` takes on positive/negative
     value.
@@ -111,7 +114,9 @@ def estimate_field_length(
     Note: this estimator assumes that `field` changes sign on a lengthscale larger than the length of each
     fiber.
     """
-    vector_field: callable = functools.partial(jax.vmap(field, in_axes=(None, 0)), params)
+    vector_field: callable = functools.partial(
+        jax.vmap(field, in_axes=(None, 0)), params
+    )
     solver_base: callable = implicit_differentiation.bind_solver(field)
     solver: callable = jax.jit(
         jax.vmap(
@@ -126,7 +131,10 @@ def estimate_field_length(
         vector_field(start_points).ravel(),
         vector_field(end_points).ravel(),
     )
-    start_signs, end_signs = utils.zero_one_sign(start_values), utils.zero_one_sign(end_values)
+    start_signs, end_signs = (
+        utils.zero_one_sign(start_values),
+        utils.zero_one_sign(end_values),
+    )
 
     if negative:
         negative: float = 0.0
@@ -178,10 +186,10 @@ def estimate_field_length(
 
 
 def estimate_field_area(
-    field: callable, 
-    fibers: np.ndarray, 
-    params: pytree, 
-    negative: bool = True, 
+    field: callable,
+    fibers: np.ndarray,
+    params: pytree,
+    negative: bool = True,
 ) -> np.ndarray:
     """Estimates the total area for which a scalar `field` takes on positive/negative
     value (negative, by default).
@@ -213,12 +221,16 @@ def estimate_field_area(
     cumulative_fiber_length: float = jax.vmap(utils.custom_norm)(
         fibers[:, 1] - fibers[:, 0]
     ).sum()
-    total_length: np.ndarray = estimate_field_length(field, fibers, params, negative=negative)
+    total_length: np.ndarray = estimate_field_length(
+        field, fibers, params, negative=negative
+    )
     total_field_area: np.ndarray = total_length / cumulative_fiber_length
     return total_field_area
 
 
-def estimate_hull_intersection_length(fibers: np.ndarray, hull: np.ndarray) -> np.ndarray:
+def estimate_hull_intersection_length(
+    fibers: np.ndarray, hull: np.ndarray
+) -> np.ndarray:
     """Estimates the total fiber length which lies within a provided
     (convex) hull.
 
@@ -257,7 +269,6 @@ def estimate_hull_intersection_length(fibers: np.ndarray, hull: np.ndarray) -> n
     return estimated_intersection_length
 
 
-
 def estimate_hull_area(fibers: np.ndarray, hull: np.ndarray) -> np.ndarray:
     """Uses fiber Monte Carlo to estimate the area of a convex shape; assuming fibers are sampled from an
     extended domain. See `estimators.estimate_hull_intersection_length`.
@@ -277,14 +288,18 @@ def estimate_hull_area(fibers: np.ndarray, hull: np.ndarray) -> np.ndarray:
 
 @functools.partial(jax.jit, static_argnums=(0, 3))
 def clip_to_field(
-    field: callable, 
-    fibers: np.ndarray, 
-    params: pytree, 
-    negative: bool = True, 
+    field: callable,
+    fibers: np.ndarray,
+    params: pytree,
+    negative: bool = True,
 ) -> np.ndarray:
     # vectorize and partially evaluate `field`
-    vector_field: callable = functools.partial(jax.vmap(field, in_axes=(None, 0)), params)
-    solver: callable = jax.vmap(lambda fiber: implicit_differentiation.bisection_solver(params, fiber, field))
+    vector_field: callable = functools.partial(
+        jax.vmap(field, in_axes=(None, 0)), params
+    )
+    solver: callable = jax.vmap(
+        lambda fiber: implicit_differentiation.bisection_solver(params, fiber, field)
+    )
     fiber_dim: int = fibers.shape[-1]
 
     # the sign of field(x) where x is each fiber endpoint
@@ -293,7 +308,10 @@ def clip_to_field(
         vector_field(start_points).ravel(),
         vector_field(end_points).ravel(),
     )
-    start_signs, end_signs = utils.zero_one_sign(start_values), utils.zero_one_sign(end_values)
+    start_signs, end_signs = (
+        utils.zero_one_sign(start_values),
+        utils.zero_one_sign(end_values),
+    )
 
     # (default) 0: field(x) < 0 --- 1: field(x) >= 0
     if negative:
@@ -328,7 +346,9 @@ def clip_to_field(
     solver_cond: callable = lambda predicates, fibers: jax.vmap(
         lambda predicate, fiber: jax.lax.cond(
             predicate,
-            lambda fiber: implicit_differentiation.get_interpolant(solver(fiber[None, :, :]), fiber)[None, :],
+            lambda fiber: implicit_differentiation.get_interpolant(
+                solver(fiber[None, :, :]), fiber
+            )[None, :],
             lambda fiber: np.zeros((1, fiber_dim)),
             operand=fiber,
         )

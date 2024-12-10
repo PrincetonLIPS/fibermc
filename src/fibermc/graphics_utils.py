@@ -5,8 +5,6 @@ from jax import jit
 import jax.numpy as np
 import numpy as static_np
 
-from fibermc.constants import FLOAT_TYPE
-
 
 def make_batch_idxs(num_elements: int, batch_size: int) -> list:
     """Constructs a list of batches of size `batch_size`. Each
@@ -218,7 +216,7 @@ def compute_background_pixel_hulls(image: np.ndarray, mask: np.ndarray) -> list:
 
 
 def create_pixel_hull(
-    pixel_coordinate: np.ndarray, ccw: bool = True, dtype=FLOAT_TYPE
+    pixel_coordinate: np.ndarray, ccw: bool = True, dtype=np.float32
 ) -> np.ndarray:
     """Create a pixel hull (i.e., a (4, 2) array with the vertices associated with a
     square convex hull) given a coordinate representing its location.
@@ -231,7 +229,7 @@ def create_pixel_hull(
     ccw: bool
         whether to orient the hull counter-clockwise (default: True).
     dtype: type
-        numeric type for the values comprising the resultant pixel hull (default: FLOAT_TYPE).
+        numeric type for the values comprising the resultant pixel hull (default: np.float32).
 
     Returns
     -------

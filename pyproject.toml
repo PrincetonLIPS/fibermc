@@ -18,7 +18,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-keywords="optimization, jax, implicit differentiation, topology optimization, computational geometry" 
+keywords=[
+	"optimization", 
+	"jax", 
+	"implicit differentiation", 
+	"topology optimization", 
+	"computational geometry"
+]
 
 [project.urls]
 Homepage = "https://github.com/PrincetonLIPS/fibers-standalone/tree/main"

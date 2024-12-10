@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fibermc" 
-version = "0.0.3" 
+version = "0.0.4" 
 authors = [
 	{ name="Nick Richardson", email="njkrichardson@princeton.edu" }, 
 ]
@@ -51,3 +51,9 @@ all = [
 [project.urls]
 Homepage = "https://github.com/PrincetonLIPS/fibers-standalone/tree/main"
 Issues = "https://github.com/PrincetonLIPS/fibers-standalone/issues"
+
+[tool.hatch.build.targest.sdist]
+exclude = [
+	"/.examples",
+	"/.notebooks", 
+]

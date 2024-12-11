@@ -1,7 +1,7 @@
 Sampling Fibers 
 ===============
 
-Much like simple Monte Carlo depends on appropriately defined 'random' points in the domain of a function of interest to estimate an associated integral, FMC estimtars take as argument a collection of random line segments (fibers) in an appropriately defined domain. 
+Much like simple Monte Carlo depends on appropriately defined 'random' points in the domain of a function of interest to estimate an associated integral, FMC estimators take as argument a collection of random line segments (fibers) in an appropriately defined domain. 
 Whereas in SMC the sampling 'atom' is a point with no spatial extent, in FMC the atom is a line segment with nonzero but finite spatial extent (length). 
 
 .. image:: media/gif/smc_vs_fmc_atoms.gif

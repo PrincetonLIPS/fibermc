@@ -9,6 +9,12 @@ Modeling the generative processes associated with applications like this involve
 Mathematically, this means the integrand contains an expression which is discontinuous (with respect to a parameter in the model). 
 As a simple concrete case, consider two polygons :math:`P_1, P_2 \in \Omega \subseteq \mathbb{R}^2`; squares, for instance. 
 Suppose the location of :math:`P_1` is fixed, but we can choose a scalar :math:`\theta \in \mathbb{R}` by which to translate :math:`P_2` along the vector :math:`(-1, -1)^T` with the goal of maximizing the area of intersection between the two shapes. 
+
+.. image:: media/gif/square_overlap.gif
+   :width: 700 
+   :align: center
+   :alt: Overlapping square problem. 
+
 This corresponds with an optimization problem whose objective :math:`\mathcal{L}` is an integral with parametric discontinuity (with respect to :math:`\theta`). 
 
 .. math::

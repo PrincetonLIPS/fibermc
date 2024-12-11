@@ -2,49 +2,74 @@ Building Estimators
 ===================
 
 Given a collection of fibers, we provide several utility functions to construct the integral estimators for a problem of interest. 
-We think the most useful view of the world is to think about the geometric primitives of the application as arising from a sublevel set of 
-an appropriately defined function. 
-At first blush this may seem overpowered and unnecessarily technical as a method to describe simple shapes (and below we do discuss functionality for 
-special cases), but in many applications we want to parameterize quite complicated and flexible geometries, and this unified description generalizes the 
-basic shapes.
+In most applications we are interested in parameterizing some kind of geometry. 
+Our estimators support two ways of parameterizing that geometry. 
 
-With that in mind, the most general way to build an estimator involves formulating a function whose zero-sublevel set corresponds with the shape/geometry of interest. 
-Concretely, let's complete the example from Basics. 
-We need to parameterize the disc as a scalar-valued function on R2 which takes on negative values within the disc, and non-negative values outside of it. 
+Polyhedra 
+---------
+In many cases of interest the function to be integrated is piecewise affine (often piecewise constant). 
+This subsumes the very common case of integrands containing an indicator function :math:`\mathbb{I}`, which arises in differentiable rendering, 
+topology optimization, and many geometric computations. 
+Since it is so common, we provide a fast path for the special case where the geometric primitives of interest (i.e. the set over which the indicator function is nonzero) are 
+polyhedra. 
 
-.. code-block:: python 
-
-   def disc_fn(x: Float[Array, "2"], disc_center: Float[Array, "2"]): 
-      return np.linalg.norm(x - disc_center) - 1. 
-
-We call this scalar-valued function which implicitly defines our shapes a 'field', and we provide estimators for the integral associated with the field (using the convention that the zero sublevel-set of the field corresponds with the interior of the shape). 
-For example, to estimate pi, we could take the quotient of the estimated area of the disc and the estimated area of the sampling domain. 
-As is the typical case, the way we sampled fibers means that we use the cumulative length of all the fibers we sampled as our estimated area of the sampling domain, 
-this is handled within estimate_field_area. 
+In this case, one can use ``fibermc.estimators.estimate_hull_area``, which estimates (relative to the cumulative length of the provided fibers) the area within 
+a given polyhedron. Polyhedra are represented using their vertices, which are expected in counter-clockwise order. 
 
 .. code-block:: python 
 
-   from fibermc.estimators import estimate_field_area
-
-   disc_area_estimate = estimate_field_area(lambda x: disc_fn(x, np.array([0.5]*2)), fibers, args) 
-
-Again, we want to flag that this approach seems (and is) overpowered for many simple cases. 
-We provide a simpler way to handle an extremely common class of shapes: polyhedra. 
-To estimate the area within a polyhedron, one needs to provide the vertices of that polyhedron (i.e., the convex hull) in counter-clockwise order, after which 
-it is simple to estimate the area of the polyhedron. 
-
-.. code-block:: python 
+   import jax.numpy as np
+   from jax_typing import Float, Array
 
    from fibermc.estimators import estimate_hull_area
 
-   triangle = np.array([
-      [0., 0.], 
-      [1., 0.], 
-      [0., 1.]
-      ])
-   hull_area_estimate = estimate_hull_area(fibers, triangle)
+    vertices: Float[Array, "v 2"] = np.array(
+        [
+            [0.0, 0.0],
+            [0.5, 0.3],
+            [1.0, 0.0],
+            [0.7, 0.5],
+            [1.0, 1.0],
+            [0.5, 0.7],
+            [0.0, 1.0],
+            [0.3, 0.5],
+        ]
+    )
+
+    fibers: Float[Array, "n 2 2"] = ... 
+    area_estimate: Float[Array, ""] = estimate_hull_area(fibers, vertices)
+
+The way this works is we essentially sum the length of fiber which lies within the shape of interest, illustrated below. 
+
+.. image:: media/images/polygon_clipping_example.png
+   :width: 700 
+   :align: center
+   :alt: Sampled fibers to estimate pi. 
 
 For more exploratory applications, we provide an extra utility to interoperate with Shapely. 
 Note that these methods cannot be JIT compiled so performance-critical applications should call the lower-level utilies. 
 Checkout examples for use of the high level Shapely interoperable functions. 
 
+Flexible Geometry via Implicit Functions
+----------------------------------------
+
+.. note:: 
+   
+   This section is under construction! Check back soon. 
+
+The most general way to parameterize geometry for our estimators involves formulating a function whose zero-sublevel set corresponds with the shape/geometry of interest. 
+We call this scalar-valued function which implicitly defines our shapes a 'field', and we provide estimators for the integral associated with the field. 
+A simpler way to think about the zero sublevel set convention is: we expect that the field takes on negative values in the interior of the shape being parameterized. 
+So the task is simply to construct a function. 
+Many examples are provided in our Examples section. 
+
+.. code-block:: python 
+
+   import jax.numpy as np
+   from jax_typing import Float, Array
+
+   from fibermc.estimators import estimate_field_area
+
+   fibers: Float[Array, "n 2 2"] = ...
+   f: Callable[[Float[Array, "2"], Any], Float[Array, ""]] = ... 
+   area_estimate = estimate_field_area(f, fibers, f_args) 

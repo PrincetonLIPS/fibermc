@@ -7,8 +7,8 @@ Computing, or more often estimating, the value of an integral is a ubiquitous ke
 Modeling the generative processes associated with applications like this involves integration in the forward model (primitives to image, for instance), which contain **parametric discontinuities**. 
 
 Mathematically, this means the integrand contains an expression which is discontinuous (with respect to a parameter in the model). 
-As a simple concrete case, consider two polygons ; squares, for instance. 
-Suppose the location of P1 is fixed, but we can choose a scalar by which to translate P2 along the vector (-1, -1) with the goal of maximizing the area of intersection between the two shapes. 
+As a simple concrete case, consider two polygons :math:`P_1, P_2`; squares, for instance. 
+Suppose the location of :math:`P_1` is fixed, but we can choose a scalar by which to translate P2 along the vector (-1, -1) with the goal of maximizing the area of intersection between the two shapes. 
 This corresponds with an optimization problem whose objective is an integral with parametric discontinuity (with respect to theta). 
 
 Intuitively, integrals like this arise from, e.g., hard spatial boundaries and collisions between objects when simulating physics, shadowing and overlap phenomena in a rendering pipeline, or the discrete geometry that often arises in topology optimization and inverse design. 

@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+PROJECT_DIRECTORY: Path = Path(__file__).parent.parent
+SOURCE_DIRECTORY: Path = PROJECT_DIRECTORY / "src"
+sys.path.insert(0, str(SOURCE_DIRECTORY))
+
 project = "Fibermc"
 author = "Nick Richardson"
 master_doc = "index"

@@ -27,7 +27,7 @@ def segment_intersection(x: Float[Tensor, "M 2 2"], y: Float[Tensor, "N 2 2"]) -
 def orient_polygon(vertices: Float[Tensor, "V 2"]) -> Float[Tensor, "V 2"]: 
     # TODO add batch dimension
     pad: callable = lambda x: nn.functional.pad(x, (0, 1))
-    orientation: float = torch.sign(torch.cross(pad(vertices[1] - vertices[0]), pad(vertices[2] - vertices[0]))[-1]).item()
+    orientation: float = torch.sign(torch.cross(pad(vertices[1] - vertices[0]), pad(vertices[2] - vertices[0]), dim=-1)[-1]).item()
     if (orientation == -1.): 
         return torch.flip(vertices, (0,))
     else: 

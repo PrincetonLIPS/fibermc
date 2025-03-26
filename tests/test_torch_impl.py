@@ -46,8 +46,27 @@ def test_clip_forward(random_convex_polygon):
     assert onp.allclose(onp.array(clipped_fibers), torch_clipped.numpy())
 
 
-def test_clip_backward(): 
-    pass 
+def test_clip_backward(random_convex_polygon): 
+    _, vertices = random_convex_polygon 
+    fiber_key, _ = npr.split(key)
+    fibers: np.ndarray = jax_estimators.sample(fiber_key, DOMAIN_BOUNDS, NUM_FIBERS, FIBER_LENGTH, dtype=DTYPE)
+    fibers_torch = torch.from_numpy(onp.array(fibers)).requires_grad_(True)
+    vertices_torch = torch.from_numpy(onp.array(vertices[:-1]))
+
+    def jax_obj(fibers: np.ndarray) -> np.ndarray: 
+        clipped = jax_geom_utils.clip_inside_convex_hull(fibers, vertices[:-1])
+        return clipped.sum()**2
+
+    def torch_obj(fibers):
+        clipped = torch_geom_utils.polygon_clip(fibers, vertices_torch)
+        return clipped.sum()**2
+
+    jax_gradient = jax.grad(jax_obj)(fibers)
+    out = torch_obj(fibers_torch)
+    out.backward()
+    torch_gradient = fibers_torch.grad 
+    assert onp.allclose(onp.array(jax_gradient), torch_gradient.numpy(), atol=1e-03)
+
 
 def test_implicit_clip_forward(): 
     pass 

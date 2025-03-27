@@ -7,13 +7,18 @@ import numpy as onp
 import pytest
 import shapely 
 import torch
+from torch import Tensor
+import torch.nn as nn 
 
 import src.fibermc.estimators as jax_estimators
 import src.fibermc.geometry_utils as jax_geom_utils
+import src.fibermc.implicit_differentiation as jax_implicit_diff
 import torch_src.estimators as torch_estimators 
 import torch_src.geometry_utils as torch_geom_utils 
+import torch_src.implicit_differentiation as torch_implicit_diff
 
 jax.config.update("jax_disable_jit", True)
+torch.manual_seed(0)
 
 key: np.ndarray = npr.PRNGKey(0)
 DTYPE: type = np.float32
@@ -69,7 +74,55 @@ def test_clip_backward(random_convex_polygon):
 
 
 def test_implicit_clip_forward(): 
-    pass 
+    class TorchImplicitModule(nn.Module):
+        def __init__(self): 
+            super().__init__()
+            self.fc = nn.Linear(2, 1, bias=False)
+
+        def forward(self, x: Tensor) -> Tensor: 
+            return self.fc(x)**2
+
+    torch_implicit = TorchImplicitModule()
+    implicit_layer = torch_implicit_diff.BisectionLayer(torch_implicit)
+
+    fiber_key, _ = npr.split(key)
+    fibers: np.ndarray = jax_estimators.sample(fiber_key, DOMAIN_BOUNDS, NUM_FIBERS, FIBER_LENGTH, dtype=DTYPE)
+    fibers_torch = torch.from_numpy(onp.array(fibers)).requires_grad_(True)
+
+    # compute fixed point (intersections)
+    out = implicit_layer(fibers_torch)
+
+    # compute intersection over union 
+    z = out.sum()**2 
+    z.backward()
+
+
+    # jax side 
+    def jax_f(params, x): 
+        A = params[0]
+        return (A @ x).sum()**2
+
+    params = (np.array(torch_implicit.fc.weight.data.numpy()),)
+
+    def jax_fwd(params): 
+        jax_out = jax.vmap(lambda fiber: jax_implicit_diff.bisection_solver(params, fiber, jax_f))(fibers)
+        return jax_out.sum()**2
+
+    jax_grad = jax.grad(jax_fwd)(params)[0]
+
+    torch_grad = -torch_implicit.fc.weight.grad.numpy() # we populate this buffer as the negative gradient for optimizers
+    jax_grad = onp.array(jax_grad)
+
+    assert onp.allclose(torch_grad, jax_grad)
+
+
+
+
+
+
+
+
+
 
 def test_implicit_clip_backward(): 
     pass 
